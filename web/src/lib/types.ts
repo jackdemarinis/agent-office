@@ -8,6 +8,7 @@ export type Agent = {
   state: AgentState
   statusLine: string
   machineId: string
+  room?: string
 }
 
 export type FeedEvent = {

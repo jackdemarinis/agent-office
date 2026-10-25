@@ -1,0 +1,5 @@
+.bar { display: flex; gap: 6px; align-items: center; padding: 10px 16px; background: #161b26; border-top: 1px solid #2a3344; }
+.pill { background: #1e2230; color: #c4c8d4; border: 1px solid #2a3344; border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+.pill[data-on='true'] { background: #ffb84d33; color: #ffd79a; border-color: #ffb84d; }
+.input { flex: 1; background: #0e1118; border: 1px solid #2a3344; border-radius: 8px; padding: 10px 12px; color: #e8ecf4; margin-left: 6px; }
+.send { background: #ff7a3d; color: #111; border: 0; border-radius: 8px; padding: 10px 22px; font-weight: 800; cursor: pointer; }

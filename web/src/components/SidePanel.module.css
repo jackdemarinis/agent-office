@@ -1,106 +1,29 @@
-.panel {
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid #243041;
-  background: #121820;
-  min-height: 0;
-}
-
-.panel[data-empty] {
-  align-items: center;
-  justify-content: center;
-}
-
-.hint {
-  color: #8b9bb0;
-  padding: 24px;
-  text-align: center;
-}
-
-.head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #243041;
-}
-
-.title {
-  font-weight: 700;
-}
-
-.sub {
-  font-size: 12px;
-  color: #8b9bb0;
-  margin-top: 4px;
-}
-
-.close {
-  border: 1px solid #2a3a4f;
-  background: transparent;
-  color: #c5d0dc;
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.feed {
-  list-style: none;
-  margin: 0;
-  padding: 12px 16px;
-  overflow: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.feed li {
-  display: grid;
-  gap: 4px;
-  font-size: 13px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #151c26;
-}
-
-.feed time {
-  font-size: 11px;
-  color: #8b9bb0;
-}
-
-.empty {
-  color: #8b9bb0;
-  background: transparent !important;
-}
-
-.composer {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  padding: 12px 16px 16px;
-  border-top: 1px solid #243041;
-}
-
-.composer input {
-  border: 1px solid #2a3a4f;
-  background: #0f1419;
-  color: #e7ecf1;
-  border-radius: 8px;
-  padding: 10px 12px;
-}
-
-.composer button {
-  border: 0;
-  background: #3d7bb8;
-  color: white;
-  border-radius: 8px;
-  padding: 0 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.composer button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+.panel { width: 360px; flex-shrink: 0; padding: 16px 16px 16px 0; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.card { background: #161b26; border: 1px solid #2a3344; border-radius: 10px; padding: 12px; }
+.panel > .card:first-child { border-color: #ffb84d; }
+.hint { color: #8b90a0; font-size: 13px; }
+.head { display: flex; gap: 10px; align-items: flex-start; }
+.avatar { background: #0e1118; border-radius: 8px; padding: 4px; }
+.name { font-weight: 800; font-size: 18px; }
+.sub { color: #8b90a0; font-size: 12px; }
+.tags { display: flex; gap: 4px; margin-top: 4px; }
+.tags span { background: #1e2a44; color: #9fc3ff; font-size: 11px; border-radius: 4px; padding: 1px 6px; }
+.x { background: none; border: 0; color: #8b90a0; font-size: 20px; cursor: pointer; }
+.status { margin: 10px 0; padding: 8px; border-radius: 6px; font-size: 13px; background: #8b90a022; }
+.status[data-state='working'] { background: #3ecf8e22; color: #a8f0cb; }
+.status[data-state='waiting'] { background: #ffb84d22; color: #ffd79a; }
+.status[data-state='error'] { background: #ff6b6b22; color: #ffb0b0; }
+.preview { border: 1px solid #2a3344; border-radius: 6px; overflow: hidden; }
+.bar { background: #1e2230; padding: 4px 8px; font-size: 11px; color: #8b90a0; display: flex; gap: 4px; align-items: center; }
+.bar i { width: 7px; height: 7px; border-radius: 50%; background: #ff6b6b; } .bar i:nth-child(2) { background: #ffb84d; } .bar i:nth-child(3) { background: #3ecf8e; }
+.screen { background: #fff4d4; height: 90px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.screen i { display: block; height: 8px; background: #8fb3c9; border-radius: 2px; } .screen i:nth-child(2n) { width: 60%; }
+.preview[data-state='idle'] .screen { background: #2a2f3a; } .preview[data-state='error'] .screen { background: #ffdede; }
+.caption { background: #0e1118; color: #8fe3b4; font-family: ui-monospace, monospace; font-size: 11px; padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row { display: flex; gap: 8px; margin-top: 10px; }
+.btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #2a3344; background: #1e2230; color: #e8ecf4; font-weight: 600; cursor: pointer; }
+.primary { background: #ff7a3d; color: #111; border-color: #ff7a3d; }
+.title { font-family: ui-monospace, monospace; font-weight: 800; letter-spacing: 1px; color: #8b90a0; margin-bottom: 8px; }
+.feed { list-style: none; margin: 0; padding: 0; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+.feed li { border-left: 2px solid #6fb3ff; padding-left: 8px; }
+.feed time { color: #8b90a0; }

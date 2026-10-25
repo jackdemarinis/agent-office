@@ -1,50 +1,9 @@
-.shell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 100%;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #243041;
-  background: #121820;
-}
-
-.muted {
-  color: #8b9bb0;
-  font-weight: 400;
-}
-
-.badge {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: #1a2330;
-  color: #8b9bb0;
-}
-
-.badge[data-state='open'] {
-  color: #7ddea2;
-}
-
-.badge[data-state='connecting'] {
-  color: #e6c07b;
-}
-
-.main {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr minmax(280px, 360px);
-  min-height: 0;
-}
-
-@media (max-width: 800px) {
-  .main {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-  }
-}
+.shell { display: flex; flex-direction: column; height: 100%; background: #0e1118; color: #e8ecf4; }
+.header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid #2a3344; }
+.wordmark { font-family: ui-monospace, monospace; font-weight: 900; font-size: 20px; letter-spacing: 3px; color: #ff7a3d; }
+.goal { flex: 1; background: #161b26; border: 1px solid #2a3344; border-radius: 6px; padding: 6px 10px; font-size: 13px; font-weight: 600; }
+.muted { color: #8b90a0; font-weight: 400; margin-right: 6px; }
+.badge { margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 6px; background: #1e2230; color: #8b90a0; }
+.badge[data-state='open'] { color: #3ecf8e; }
+.badge[data-state='closed'] { color: #ff6b6b; }
+.main { flex: 1; display: flex; min-height: 0; }
