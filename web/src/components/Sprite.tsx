@@ -5,14 +5,15 @@ const KINDS: Record<string, { c1: string; c2: string; ears: 'fox' | 'cat' | 'rob
 }
 const FALLBACK = ['#7fd1c7', '#f5c542', '#b48cff', '#ff9a6b', '#8fe3b4']
 
-export function Sprite({ name, size = 48 }: { name: string; size?: number }) {
+export function Sprite({ name, size = 48, kind }: { name: string; size?: number; kind?: string }) {
   const key = name.toLowerCase()
   let k = KINDS[key]
   if (!k) {
     const h = [...key].reduce((a, c) => a + c.charCodeAt(0), 0)
     k = { c1: FALLBACK[h % FALLBACK.length], c2: '#3a3f55', ears: (['fox', 'cat', 'robot', 'blob'] as const)[h % 4] }
   }
-  const { c1, c2, ears } = k
+  const { c1, c2 } = k
+  const ears = (kind && ['fox', 'cat', 'robot', 'blob'].includes(kind) ? kind : k.ears) as typeof k.ears
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" shapeRendering="crispEdges" aria-hidden>
       {ears === 'fox' && (<><rect x="3" y="1" width="2" height="3" fill={c1} /><rect x="11" y="1" width="2" height="3" fill={c1} /></>)}

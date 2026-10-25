@@ -1,0 +1,21 @@
+.overlay { position: fixed; inset: 0; background: #0e111899; display: grid; place-items: center; z-index: 50; }
+.card { width: 420px; max-width: 92vw; max-height: 90vh; overflow: auto; background: #161b26; border: 1px solid #2a3344; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #e8ecf4; }
+.card h2 { margin: 0 0 4px; font-size: 17px; font-family: ui-monospace, monospace; }
+.back { font-size: 12px; color: #8b90a0; font-weight: 400; }
+.card label { display: flex; flex-direction: column; gap: 4px; color: #8b90a0; flex: 1; }
+.card input:not([type='radio']), .card select { background: #0e1118; border: 1px solid #2a3344; color: #e8ecf4; border-radius: 6px; padding: 7px 9px; font: inherit; }
+.lbl { color: #8b90a0; }
+.row { display: flex; gap: 10px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { background: #0e1118; border: 1px solid #2a3344; color: #c4c8d4; border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit; }
+.seg button[data-on='true'] { border-color: #ff7a3d; color: #ff7a3d; }
+.radios { display: flex; flex-direction: column; gap: 6px; }
+.card label.radio { flex-direction: row; align-items: center; gap: 8px; border: 1px solid #2a3344; border-radius: 6px; padding: 7px 9px; color: #e8ecf4; cursor: pointer; }
+.radio[data-on='true'] { border-color: #ff7a3d; }
+.radio small { color: #8b90a0; margin-left: auto; }
+.note { color: #8b90a0; font-size: 12px; margin: 0; }
+.err { color: #ff6b6b; margin: 0; }
+.foot { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.primary { background: #ff7a3d; color: #111; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 700; cursor: pointer; }
+.ghost { background: none; border: 1px solid #2a3344; color: #c4c8d4; border-radius: 6px; padding: 7px 14px; cursor: pointer; }
+.link { background: none; border: 0; color: #6fb3ff; cursor: pointer; padding: 0; font: inherit; }

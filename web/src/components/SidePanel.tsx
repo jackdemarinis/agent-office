@@ -1,5 +1,6 @@
 import type { Agent, FeedEvent } from '../lib/types'
 import { Sprite } from './Sprite'
+import { fmtK, fmtUp } from '../lib/mockAgents'
 import s from './SidePanel.module.css'
 
 type Props = { agent: Agent | null; feed: FeedEvent[]; onClose: () => void; onMessage: () => void }
@@ -11,7 +12,7 @@ export function SidePanel({ agent, feed, onClose, onMessage }: Props) {
     <aside className={s.panel} aria-label={`${agent.name} panel`}>
       <div className={s.card}>
         <div className={s.head}>
-          <div className={s.avatar}><Sprite name={agent.name} size={56} /></div>
+          <div className={s.avatar}><Sprite name={agent.name} size={56} kind={agent.character} /></div>
           <div style={{ flex: 1 }}>
             <div className={s.name}>{agent.name}</div>
             <div className={s.sub}>{agent.room ?? 'office'} · {agent.machineId}</div>
@@ -19,6 +20,13 @@ export function SidePanel({ agent, feed, onClose, onMessage }: Props) {
           </div>
           <button className={s.x} onClick={onClose} aria-label="Close">×</button>
         </div>
+        <dl className={s.stats}>
+          <dt>model</dt><dd>{agent.model || '—'}</dd>
+          <dt>provider</dt><dd>{agent.provider}</dd>
+          <dt>ctx</dt><dd>{fmtK(agent.tokensUsed)}/{fmtK(agent.contextWindow)}</dd>
+          <dt>uptime</dt><dd>{fmtUp(agent.uptimeSec)}</dd>
+          <dt>tasks</dt><dd>{agent.tasksDone}/{agent.tasksTotal}</dd>
+        </dl>
         <div className={s.status} data-state={agent.state}><b>{agent.state}</b> · {agent.statusLine || '—'}</div>
         <div className={s.preview} data-state={agent.state}>
           <div className={s.bar}><i /><i /><i /> <span>{agent.name.toLowerCase()} · preview</span></div>

@@ -7,3 +7,5 @@
 .badge[data-state='open'] { color: #3ecf8e; }
 .badge[data-state='closed'] { color: #ff6b6b; }
 .main { flex: 1; display: flex; min-height: 0; }
+.add { background: #ff7a3d22; color: #ff7a3d; border: 1px solid #ff7a3d; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; }
+.toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: #161b26; border: 1px solid #3ecf8e; color: #3ecf8e; padding: 8px 14px; border-radius: 8px; z-index: 60; }

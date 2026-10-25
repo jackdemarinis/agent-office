@@ -10,6 +10,7 @@ export default defineConfig({
       '/health': 'http://127.0.0.1:8787',
       '/agents': 'http://127.0.0.1:8787',
       '/machines': 'http://127.0.0.1:8787',
+      '/offices': 'http://127.0.0.1:8787',
       '/goal': 'http://127.0.0.1:8787',
       '/messages': { target: 'http://127.0.0.1:8787', changeOrigin: true },
       '/events': { target: 'http://127.0.0.1:8787', changeOrigin: true },

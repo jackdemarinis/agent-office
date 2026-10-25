@@ -3,9 +3,10 @@ import styles from './App.module.css'
 import { Floor } from './components/Floor'
 import { SidePanel } from './components/SidePanel'
 import { Composer } from './components/Composer'
+import { Modal, emptyDrafts, type Mode } from './components/Modals'
 import type { Chatter } from './components/Floor'
 import { INITIAL_AGENTS, MOCK_CHATTER, nextStatusLine } from './lib/mockAgents'
-import type { Agent, AgentState, FeedEvent } from './lib/types'
+import type { Agent, AgentState, FeedEvent, Machine, Office } from './lib/types'
 import { connectHubWs, type WsClient } from './lib/ws'
 
 const HUB = (import.meta.env.VITE_HUB_HTTP as string | undefined) ?? ''
@@ -27,6 +28,13 @@ function mapAgent(raw: Record<string, unknown>): Agent {
     statusLine: String(raw.statusLine ?? ''),
     machineId: String(raw.machineId ?? ''),
     room: raw.room ? String(raw.room) : undefined,
+    officeId: raw.officeId ? String(raw.officeId) : 'office-1',
+    character: raw.character ? String(raw.character) : undefined,
+    contextWindow: Number(raw.contextWindow ?? 200000),
+    tokensUsed: Number(raw.tokensUsed ?? 12000),
+    uptimeSec: Number(raw.uptimeSec ?? 3600),
+    tasksDone: Number(raw.tasksDone ?? 0),
+    tasksTotal: Number(raw.tasksTotal ?? 0),
   }
 }
 
@@ -55,6 +63,12 @@ export default function App() {
   const [target, setTarget] = useState('@all')
   const [goal, setGoal] = useState<string | null>(null)
   const [hubAgents, setHubAgents] = useState(false)
+  const [offices, setOffices] = useState<Office[]>([{ id: 'office-1', name: 'Office', machineId: 'mini', runtime: 'docker', agentIds: [] }])
+  const [machines, setMachines] = useState<Machine[]>([{ id: 'mini', label: 'Mac mini' }])
+  const [modal, setModal] = useState<{ mode: Mode; returnTo: Mode | null } | null>(null)
+  const [drafts, setDrafts] = useState(emptyDrafts)
+  const [toast, setToast] = useState('')
+  const flash = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
 
   // Offline demo: seed mock agents if hub gives none
   useEffect(() => {
@@ -117,9 +131,56 @@ export default function App() {
     }
   }, [])
 
-  useEffect(() => {
-    void refreshAgents()
+  const refreshAll = useCallback(async () => {
+    await refreshAgents()
+    try {
+      const [o, m] = await Promise.all([fetch(`${HUB}/offices`), fetch(`${HUB}/machines`)])
+      if (o.ok) { const d = await o.json(); if (Array.isArray(d) && d.length) setOffices(d) }
+      if (m.ok) { const d = await m.json(); if (Array.isArray(d) && d.length) setMachines(d) }
+    } catch { /* hub down */ }
   }, [refreshAgents])
+
+  useEffect(() => {
+    void refreshAll()
+  }, [refreshAll])
+
+  const post = async (path: string, body: unknown) => {
+    try {
+      const r = await fetch(`${HUB}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      return r.ok ? await r.json() : null
+    } catch { return null }
+  }
+
+  const openModal = (mode: Mode, preset?: { officeId?: string }) => {
+    setDrafts((d) => ({
+      ...d,
+      agent: { ...d.agent, officeId: preset?.officeId || d.agent.officeId || offices[0]?.id || '' },
+      office: { ...d.office, machineId: d.office.machineId || machines[0]?.id || '' },
+    }))
+    setModal({ mode, returnTo: null })
+  }
+
+  const submitModal = async (mode: Mode): Promise<string | null> => {
+    let id: string | null = null
+    if (mode === 'computer') {
+      const c = drafts.computer
+      const r = await post('/machines', { name: c.name, host: c.address || undefined, kind: c.kind })
+      if (r) { id = r.id; setDrafts((d) => ({ ...d, computer: emptyDrafts().computer, office: { ...d.office, machineId: r.id } })); flash(`Computer ${c.name} added`) }
+    } else if (mode === 'office') {
+      const o = drafts.office
+      const agentsIn = o.newAgents.split(',').map((x) => x.trim()).filter(Boolean).map((name) => ({ name }))
+      const r = await post('/offices', { name: o.name, runtime: o.runtime, machineId: o.machineId || undefined, agents: agentsIn, moveAgentIds: o.agentIds })
+      if (r) { id = r.office.id; setDrafts((d) => ({ ...d, office: emptyDrafts().office, agent: { ...d.agent, officeId: r.office.id } })); flash(`Office ${o.name} created`) }
+    } else {
+      const a = drafts.agent
+      const r = await post('/agents', { name: a.name, model: a.model || undefined, contextWindow: a.contextWindow, character: a.character, officeId: a.officeId || undefined })
+      if (r) { id = r.agent.id; setDrafts((d) => ({ ...d, agent: { ...emptyDrafts().agent, officeId: a.officeId } })); flash(`${a.name} hired`) }
+    }
+    if (!id) return null
+    await refreshAll()
+    setModal((m) => (m?.returnTo ? { mode: m.returnTo, returnTo: null } : null))
+    return id
+  }
 
   useEffect(() => {
     const client = connectHubWs({
@@ -146,6 +207,7 @@ export default function App() {
             return next
           })
         }
+        if (msg.type === 'office.created' || msg.type === 'machine.created' || msg.type === 'agent.created') void refreshAll()
         if (msg.type === 'event.appended' && msg.event) {
           setFeed((prev) => [mapEvent(msg.event!), ...prev].slice(0, 80))
         }
@@ -192,9 +254,12 @@ export default function App() {
         <span className={styles.badge} data-state={wsState} title="Hub WebSocket">
           ● hub {wsState}{!hubAgents && agents.length ? ' · demo' : ''}
         </span>
+        <button className={styles.add} onClick={() => openModal('office')}>+ Office</button>
+        <button className={styles.add} onClick={() => openModal('agent')}>+ Agent</button>
+        <button className={styles.add} onClick={() => openModal('computer')}>+ Computer</button>
       </header>
       <div className={styles.main}>
-        <Floor agents={agents} chatter={chatter} selectedId={selectedId} onSelect={select} />
+        <Floor agents={agents} offices={offices} machines={machines} chatter={chatter} selectedId={selectedId} onSelect={select} onNewOffice={() => openModal('office')} onAddAgent={(officeId) => openModal('agent', { officeId })} />
         <SidePanel
           agent={selected}
           feed={feed.filter((e) => !selected || e.agentId === selected.id || e.agentId === 'all')}
@@ -202,6 +267,12 @@ export default function App() {
           onMessage={() => composerRef.current?.focus()}
         />
       </div>
+      {modal && (
+        <Modal mode={modal.mode} returnTo={modal.returnTo} drafts={drafts} setDrafts={setDrafts} offices={offices} machines={machines}
+          agents={agents.map((a) => ({ id: a.id, name: a.name }))}
+          onSwitch={(to, returnTo) => setModal({ mode: to, returnTo })} onClose={() => setModal(null)} onSubmit={submitModal} />
+      )}
+      {toast && <div className={styles.toast}>{toast}</div>}
       <Composer ref={composerRef} agents={agents} target={target} onTarget={setTarget} onSend={sendMessage} />
     </div>
   )
