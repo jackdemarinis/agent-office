@@ -128,6 +128,17 @@ async def create_agent(a: NewAgent):
     rec = await _add_agent(a, off)
     return {"agent": rec, "office": off}
 
+@app.delete("/agents/{aid}")
+async def delete_agent(aid: str):
+    if aid not in AGENTS: raise HTTPException(404, "agent not found")
+    del AGENTS[aid]
+    for off in OFFICES.values():
+        if aid in off["agentIds"]: off["agentIds"].remove(aid)
+    for mc in MACHINES.values():
+        if aid in mc.get("agentIds", []): mc["agentIds"].remove(aid)
+    await broadcast({"type": "agent.removed", "id": aid})
+    return {"ok": True, "id": aid}
+
 @app.get("/goal")
 def get_goal(): return GOAL
 

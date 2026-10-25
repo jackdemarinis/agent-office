@@ -30,3 +30,7 @@
 
 .stats { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 12px; margin: 8px 0; font-family: ui-monospace, monospace; }
 .stats dt { color: #8b90a0; } .stats dd { margin: 0; }
+
+.danger { margin-top: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ff6b6b66; background: transparent; color: #ff6b6b; font-weight: 600; cursor: pointer; }
+.danger:hover { background: #ff6b6b18; }
+.dangerCta { background: #ff6b6b !important; color: #111 !important; border: 0 !important; }

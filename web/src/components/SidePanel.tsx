@@ -1,13 +1,52 @@
+import { useEffect, useState } from 'react'
 import type { Agent, FeedEvent } from '../lib/types'
 import { Sprite } from './Sprite'
 import { fmtK, fmtUp } from '../lib/mockAgents'
 import s from './SidePanel.module.css'
+import m from './Modals.module.css'
 
-type Props = { agent: Agent | null; feed: FeedEvent[]; onClose: () => void; onMessage: () => void }
+type Props = {
+  agent: Agent | null
+  feed: FeedEvent[]
+  onClose: () => void
+  onMessage: () => void
+  onRemove: (agent: Agent) => Promise<boolean>
+}
 
-export function SidePanel({ agent, feed, onClose, onMessage }: Props) {
+export function SidePanel({ agent, feed, onClose, onMessage, onRemove }: Props) {
+  const [confirm, setConfirm] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    setConfirm(false)
+    setErr('')
+    setBusy(false)
+  }, [agent?.id])
+
+  useEffect(() => {
+    if (!confirm) return
+    const k = (e: KeyboardEvent) => e.key === 'Escape' && setConfirm(false)
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [confirm])
+
   if (!agent) return <aside className={s.panel}><p className={s.hint}>Click a desk to see its agent.</p></aside>
   const latest = feed[0]
+
+  const doRemove = async () => {
+    if (busy) return
+    setBusy(true)
+    setErr('')
+    const ok = await onRemove(agent)
+    setBusy(false)
+    if (!ok) {
+      setErr('Could not remove — hub error or unreachable.')
+      return
+    }
+    setConfirm(false)
+  }
+
   return (
     <aside className={s.panel} aria-label={`${agent.name} panel`}>
       <div className={s.card}>
@@ -34,9 +73,10 @@ export function SidePanel({ agent, feed, onClose, onMessage }: Props) {
           <div className={s.caption}>{latest ? latest.text : 'live preview (stub)'}</div>
         </div>
         <div className={s.row}>
-          <button className={s.btn}>Pause</button>
-          <button className={`${s.btn} ${s.primary}`} onClick={onMessage}>Message</button>
+          <button type="button" className={s.btn}>Pause</button>
+          <button type="button" className={`${s.btn} ${s.primary}`} onClick={onMessage}>Message</button>
         </div>
+        <button type="button" className={s.danger} onClick={() => setConfirm(true)}>Remove agent</button>
       </div>
       <div className={s.card}>
         <div className={s.title}>CHATTER</div>
@@ -48,6 +88,22 @@ export function SidePanel({ agent, feed, onClose, onMessage }: Props) {
           </ul>
         )}
       </div>
+
+      {confirm && (
+        <div className={m.overlay} onMouseDown={(e) => e.target === e.currentTarget && setConfirm(false)}>
+          <div className={m.card} role="dialog" aria-label={`Remove ${agent.name}?`}>
+            <h2>Remove {agent.name}?</h2>
+            <p className={m.note}>Work and history for this desk will stop. This can’t be undone from the floor.</p>
+            {err && <p className={m.err}>{err}</p>}
+            <div className={m.foot}>
+              <button type="button" className={m.ghost} onClick={() => setConfirm(false)} disabled={busy}>Cancel</button>
+              <button type="button" className={`${m.primary} ${s.dangerCta}`} onClick={() => void doRemove()} disabled={busy}>
+                {busy ? 'Removing…' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

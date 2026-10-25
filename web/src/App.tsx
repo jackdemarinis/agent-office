@@ -207,6 +207,14 @@ export default function App() {
             return next
           })
         }
+        if (msg.type === 'agent.removed') {
+          const rid = String((msg as { id?: string; agentId?: string }).id ?? (msg as { agentId?: string }).agentId ?? '')
+          if (rid) {
+            setAgents((prev) => prev.filter((a) => a.id !== rid))
+            setSelectedId((id) => (id === rid ? null : id))
+          }
+          void refreshAll()
+        }
         if (msg.type === 'office.created' || msg.type === 'machine.created' || msg.type === 'agent.created') void refreshAll()
         if (msg.type === 'event.appended' && msg.event) {
           setFeed((prev) => [mapEvent(msg.event!), ...prev].slice(0, 80))
@@ -240,6 +248,22 @@ export default function App() {
       .catch(() => appendFeed({ agentId, kind: 'error', text: 'hub unreachable — message not sent' }))
   }
 
+  const removeAgent = async (agent: Agent): Promise<boolean> => {
+    try {
+      const r = await fetch(`${HUB}/agents/${encodeURIComponent(agent.id)}`, { method: 'DELETE' })
+      if (!r.ok) return false
+      setAgents((prev) => prev.filter((a) => a.id !== agent.id))
+      setOffices((prev) => prev.map((o) => ({ ...o, agentIds: (o.agentIds ?? []).filter((id) => id !== agent.id) })))
+      setSelectedId((id) => (id === agent.id ? null : id))
+      setTarget((tg) => (tg === `@${agent.name}` ? '@all' : tg))
+      flash(`${agent.name} removed`)
+      void refreshAll()
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const select = (id: string) => {
     setSelectedId(id)
     const a = agents.find((x) => x.id === id)
@@ -265,6 +289,7 @@ export default function App() {
           feed={feed.filter((e) => !selected || e.agentId === selected.id || e.agentId === 'all')}
           onClose={() => setSelectedId(null)}
           onMessage={() => composerRef.current?.focus()}
+          onRemove={removeAgent}
         />
       </div>
       {modal && (
