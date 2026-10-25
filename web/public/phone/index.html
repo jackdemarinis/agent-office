@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Agent Office — Phone</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0f1218; --card:#1a2030; --line:#2a3348; --text:#e8ecf4; --muted:#9aa3b5; --idle:#8b90a0; --busy:#ffb84d; --done:#3ecf8e; --err:#ff6b6b; --accent:#5b8cff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:15px/1.4 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100dvh; padding:12px 12px calc(12px + env(safe-area-inset-bottom)); }
+    header { margin-bottom:12px; }
+    h1 { font-size:1.15rem; margin:0 0 4px; }
+    .sub { color:var(--muted); font-size:0.85rem; }
+    ul { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+    li { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; display:grid; grid-template-columns:10px 1fr auto; gap:10px; align-items:start; }
+    .dot { width:10px; height:10px; border-radius:50%; margin-top:5px; background:var(--idle); }
+    .dot.working,.dot.thinking,.dot.busy { background:var(--busy); }
+    .dot.idle { background:var(--idle); }
+    .dot.error { background:var(--err); }
+    .name { font-weight:600; }
+    .status { color:var(--muted); font-size:0.85rem; margin-top:2px; }
+    .state { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted); white-space:nowrap; }
+    form { position:sticky; bottom:0; margin-top:14px; display:flex; gap:8px; background:var(--bg); padding-top:8px; }
+    input { flex:1; min-width:0; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; padding:12px; font:inherit; }
+    button { border:0; border-radius:10px; background:var(--accent); color:#fff; padding:12px 14px; font:inherit; font-weight:600; }
+    .ack { margin-top:8px; color:var(--muted); font-size:0.85rem; min-height:1.2em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Agent Office</h1>
+    <p class="sub">Phone light client · live hub <span id="hubState">…</span></p>
+  </header>
+  <ul id="agents"></ul>
+  <form id="cmd" autocomplete="off">
+    <input id="text" name="text" placeholder="@nova status check" aria-label="Command" />
+    <button type="submit">Send</button>
+  </form>
+  <p class="ack" id="ack" aria-live="polite"></p>
+  <script>
+    // Same-origin when served over http (Vite proxy / hub host); localhost hub for file://
+    const SAME = location.protocol.startsWith('http');
+    const HUB = SAME ? '' : 'http://localhost:8787';
+    const WS_URL = SAME ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws` : 'ws://localhost:8787/ws';
+    const list = document.getElementById('agents');
+    const ack = document.getElementById('ack');
+    const hubState = document.getElementById('hubState');
+    let agents = [];
+
+    function render() {
+      list.innerHTML = agents.map(a => `
+        <li>
+          <span class="dot ${a.state||'idle'}"></span>
+          <div><div class="name">${a.name}</div><div class="status">${a.statusLine||''}</div></div>
+          <span class="state">${a.state||''}</span>
+        </li>`).join('');
+    }
+
+    async function refresh() {
+      try {
+        const r = await fetch(HUB + '/agents');
+        agents = await r.json();
+        hubState.textContent = 'open';
+        render();
+      } catch (e) {
+        hubState.textContent = 'down';
+      }
+    }
+
+    document.getElementById('cmd').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = document.getElementById('text').value.trim();
+      if (!text) return;
+      const to = text.startsWith('@') ? text.split(/\s+/)[0] : '@all';
+      const body = text.startsWith('@') ? text.replace(/^@\S+\s*/, '') || text : text;
+      try {
+        const r = await fetch(HUB + '/messages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, text: body || text })
+        });
+        const j = await r.json();
+        ack.textContent = 'delivered: ' + (j.delivered||[]).join(', ');
+        document.getElementById('text').value = '';
+        setTimeout(refresh, 500);
+      } catch {
+        ack.textContent = 'hub unreachable';
+      }
+    });
+
+    refresh();
+    setInterval(refresh, 3000);
+    try {
+      const ws = new WebSocket(WS_URL);
+      ws.onopen = () => { hubState.textContent = 'ws'; ws.send(JSON.stringify({type:'subscribe'})); };
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === 'agent.updated' && msg.agent) {
+            const i = agents.findIndex(a => a.id === msg.agent.id);
+            if (i >= 0) agents[i] = msg.agent; else agents.push(msg.agent);
+            render();
+          }
+          if (msg.type === 'event.appended' && msg.event && msg.event.type === 'ack') {
+            ack.textContent = msg.event.text || 'ack';
+          }
+        } catch {}
+      };
+      ws.onclose = () => { hubState.textContent = 'ws closed'; };
+    } catch {}
+  </script>
+</body>
+</html>

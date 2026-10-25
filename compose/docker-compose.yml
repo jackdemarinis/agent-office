@@ -1,0 +1,21 @@
+# Slice 0: host network — this box blocks bridge inter-container TCP.
+# On Mac mini (Docker Desktop), bridge + http://hub:8787 is preferred; keep both documented in README.
+services:
+  hub:
+    build: ../hub
+    network_mode: host
+  mock-agent-1:
+    build: ../mocks
+    network_mode: host
+    environment: { HUB_URL: "http://127.0.0.1:8787", AGENT_ID: "mock-agent-1", INTERVAL: "2" }
+    depends_on: [hub]
+  mock-agent-2:
+    build: ../mocks
+    network_mode: host
+    environment: { HUB_URL: "http://127.0.0.1:8787", AGENT_ID: "mock-agent-2", INTERVAL: "2" }
+    depends_on: [hub]
+  mock-agent-3:
+    build: ../mocks
+    network_mode: host
+    environment: { HUB_URL: "http://127.0.0.1:8787", AGENT_ID: "mock-agent-3", INTERVAL: "2" }
+    depends_on: [hub]

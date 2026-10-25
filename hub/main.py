@@ -1,0 +1,93 @@
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+
+app = FastAPI(title="Agent Office Hub")
+AGENTS = {f"mock-agent-{i}": {"id": f"mock-agent-{i}", "name": n, "provider": "mock", "model": "mock-1",
+          "state": "idle", "statusLine": "waiting", "machineId": "mini"} for i, n in [(1, "nova"), (2, "iris"), (3, "kai")]}
+MACHINES = {"mini": {"id": "mini", "host": "mac-mini.local", "cpu": 0.0, "ram": 0.0, "disk": 0.0, "gpu": None,
+            "agentIds": list(AGENTS)}}
+GOAL = {"markdown": "# Slice 0\nDemo loop with 3 mock agents.", "tasks": []}
+EVENTS: list[dict] = []
+CLIENTS: set[WebSocket] = set()
+
+class Message(BaseModel):
+    to: str
+    text: str
+
+class Goal(BaseModel):
+    markdown: str
+    tasks: list = []
+
+class Event(BaseModel):
+    agentId: str
+    type: str = "status"
+    state: str | None = None
+    statusLine: str | None = None
+    text: str | None = None
+
+async def broadcast(msg: dict):
+    for ws in list(CLIENTS):
+        try: await ws.send_json(msg)
+        except Exception: CLIENTS.discard(ws)
+
+def targets(to: str):
+    if to == "@all" or to.startswith("#"): return list(AGENTS)
+    n = to.lstrip("@")
+    return [a["id"] for a in AGENTS.values() if n in (a["name"], a["id"])]
+
+@app.get("/health")
+def health(): return {"ok": True, "agents": len(AGENTS), "clients": len(CLIENTS)}
+
+@app.get("/agents")
+def agents(): return list(AGENTS.values())
+
+@app.get("/machines")
+def machines(): return list(MACHINES.values())
+
+@app.get("/goal")
+def get_goal(): return GOAL
+
+@app.put("/goal")
+async def put_goal(g: Goal):
+    GOAL.update(g.model_dump()); await broadcast({"type": "goal.updated", "goal": GOAL}); return GOAL
+
+@app.post("/messages")
+async def messages(m: Message):
+    ids = targets(m.to)
+    for i in ids:
+        e = {"agentId": i, "type": "message", "text": m.text}
+        EVENTS.append(e); await broadcast({"type": "event.appended", "event": e})
+        # Slice-0: immediate mock ack so UI works even if adapter poll lags
+        ack = {"agentId": i, "type": "ack", "text": f"ack: {m.text}", "kind": "message.ack"}
+        EVENTS.append(ack); await broadcast({"type": "event.appended", "event": ack})
+        a = AGENTS.get(i)
+        if a:
+            a["state"] = "working"; a["statusLine"] = f"Handling: {m.text[:40]}"
+            await broadcast({"type": "agent.updated", "agent": a})
+    return {"delivered": ids}
+
+@app.get("/agents/{aid}/inbox")
+def inbox(aid: str, since: int = 0):
+    return {"next": len(EVENTS), "messages": [e for e in EVENTS[since:] if e["agentId"] == aid and e["type"] == "message"]}
+
+@app.post("/events")
+async def events(e: Event):
+    d = e.model_dump(exclude_none=True); EVENTS.append(d)
+    a = AGENTS.get(e.agentId)
+    if a:
+        for k in ("state", "statusLine"):
+            if k in d: a[k] = d[k]
+        await broadcast({"type": "agent.updated", "agent": a})
+    await broadcast({"type": "event.appended", "event": d})
+    return {"ok": True}
+
+@app.websocket("/ws")
+async def ws(sock: WebSocket):
+    await sock.accept(); CLIENTS.add(sock)
+    try:
+        while True:
+            msg = await sock.receive_json()
+            if msg.get("type") == "message.send":
+                await messages(Message(to=msg["to"], text=msg["text"]))
+    except WebSocketDisconnect:
+        CLIENTS.discard(sock)

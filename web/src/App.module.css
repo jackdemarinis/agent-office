@@ -1,0 +1,50 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #243041;
+  background: #121820;
+}
+
+.muted {
+  color: #8b9bb0;
+  font-weight: 400;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #1a2330;
+  color: #8b9bb0;
+}
+
+.badge[data-state='open'] {
+  color: #7ddea2;
+}
+
+.badge[data-state='connecting'] {
+  color: #e6c07b;
+}
+
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 360px);
+  min-height: 0;
+}
+
+@media (max-width: 800px) {
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+}
