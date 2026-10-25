@@ -30,7 +30,9 @@ export function Floor({ agents, offices, machines, chatter, selectedId, onSelect
         const m = machines.find((x) => x.id === o.machineId)
         const idx = (n: string) => list.findIndex((a) => a.name.toLowerCase() === n.toLowerCase())
         const arcs = chatter.filter((c) => idx(c.from) >= 0 && idx(c.to) >= 0 && c.from !== c.to).slice(0, 4)
-        const cx = (i: number) => ((i + 0.5) / list.length) * 100
+        const n = list.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 6 ? 3 : n <= 8 ? 4 : Math.min(8, Math.ceil(Math.sqrt(n * 2)))
+        const density = n <= 2 ? 'lg' : n <= 4 ? 'md' : n <= 8 ? 'sm' : 'xs'
+        const cx = (i: number) => (((i % cols) + 0.5) / cols) * 100
         return (
           <section key={o.id} className={s.machine}>
             <header className={s.machineHead}>🖥 {(m?.label ?? o.machineId).toUpperCase()} <span className={s.rt}>{RT[o.runtime] ?? o.runtime}</span></header>
@@ -40,7 +42,7 @@ export function Floor({ agents, offices, machines, chatter, selectedId, onSelect
                 <span className={s.health} data-tone={r.tone}>{r.label}</span>
               </div>
               <div className={s.meta}>{list.length} agents <button className={s.addAgent} onClick={() => onAddAgent(o.id)}>+ agent</button></div>
-              <div className={s.desks}>
+              <div className={s.desks} data-count={n} data-density={density} style={{ ['--cols' as string]: cols }}>
                 {/* Orthogonal chatter: up from sender, across a lane, down into receiver with arrowhead */}
                 {arcs.map((c, k) => {
                   const a = cx(idx(c.from)), b = cx(idx(c.to))
@@ -56,6 +58,7 @@ export function Floor({ agents, offices, machines, chatter, selectedId, onSelect
                     </div>
                   )
                 })}
+                <div className={s.grid}>
                 {list.map((a) => (
                   <button key={a.id} className={s.desk} data-state={a.state} data-selected={a.id === selectedId} onClick={() => onSelect(a.id)}>
                     {EMOTE[a.state] && <span className={s.emote}>{EMOTE[a.state]}</span>}
@@ -73,6 +76,7 @@ export function Floor({ agents, offices, machines, chatter, selectedId, onSelect
                     </div>
                   </button>
                 ))}
+                </div>
               </div>
               <span className={s.plant}>🪴</span>
             </div>
